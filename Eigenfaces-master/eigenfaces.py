@@ -32,8 +32,8 @@ class Eigenfaces(object):                                                       
 
     faces_dir = '.'                                                             # directory path to the AT&T faces
 
-    train_faces_count = 6                                                       # number of faces used for training
-    test_faces_count = 4                                                        # number of faces used for testing
+    train_faces_count = 9                                                       # number of faces used for training
+    test_faces_count = 1                                                        # number of faces used for testing
 
     l = train_faces_count * faces_count                                         # training images count
     m = 92                                                                      # number of columns of the image
@@ -144,14 +144,14 @@ class Eigenfaces(object):                                                       
                             's' + str(face_id), str(test_id) + '.pgm')          # relative path
 
                     result_id = self.classify(path_to_img)
-                    result = (result_id == face_id)
+                    result = (int(result_id) == int(face_id))
 
                     if result == True:
                         test_correct += 1
                         f.write('image: %s\nresult: correct\n\n' % path_to_img)
                     else:
-                        f.write('image: %s\nresult: wrong, got %2d\n\n' %
-                                (path_to_img, result_id))
+                        f.write('image: %s\nresult: wrong, got %2d (face_id = %2d)\n\n' %
+                                (path_to_img, result_id, face_id))
 
         print ('> Evaluating AT&T faces ended')
         self.accuracy = float(100. * test_correct / test_count)
@@ -186,8 +186,9 @@ class Eigenfaces(object):                                                       
             result_dir = os.path.join('results', name_noext)                    # path to the respective results folder
             os.makedirs(result_dir)                                             # make a results folder for the respective celebrity
             result_file = os.path.join(result_dir, 'results.txt')               # the file with the similarity value and id's
-
+            
             f = open(result_file, 'w')                                          # open the results file for writing
+            f.write('Test image : ' + img_name +'\n\n')
             for top_id in top5_ids:
                 face_id = int(top_id / self.train_faces_count) + 1                 # getting the face_id of one of the closest matches
                 subface_id = self.training_ids[face_id-1][top_id % self.train_faces_count]           # getting the exact subimage from the face
