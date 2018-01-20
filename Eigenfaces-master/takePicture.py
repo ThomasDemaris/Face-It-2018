@@ -11,14 +11,12 @@ n=1
 while os.path.isfile(os.path.join('celebrity_faces', f'{n}.jpg')) == True:
                 n += 1
 
-# Define the codec and create VideoWriter object
-fourcc = cv2.VideoWriter_fourcc(*'MJPG')
-
 #Capture a frame using spacebar
 while(cap.isOpened()):
     ret, frame = cap.read()
+    cv2.rectangle(frame, (134, 14), (506, 466), (0, 0, 255), 2)
+    
     if ret==True:
-
         cv2.imshow('frame', frame)
         if cv2.waitKey(1) & 0xFF == ord(' '):
             image = frame
