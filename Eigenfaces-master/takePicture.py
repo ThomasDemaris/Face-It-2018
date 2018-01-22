@@ -8,7 +8,7 @@ cap = cv2.VideoCapture(0)
 
 #Set the right value for the filename
 n=1
-while os.path.isfile(os.path.join('celebrity_faces', f'{n}.jpg')) == True:
+while os.path.isfile(os.path.join('test_faces', f'{n}.jpg')) == True:
                 n += 1
 
 #Capture a frame using spacebar
@@ -34,6 +34,10 @@ cropped = image[16:464, 136:504]
 #Downsize and save picture
 dim = (92, 112)
 resized = cv2.resize(cropped, dim, interpolation = cv2.INTER_AREA)
-cv2.imwrite(os.path.join('celebrity_faces', f'{n}.jpg'), resized)
+cv2.imwrite(os.path.join('test_faces', f'{n}.jpg'), resized)
 
+#Check if database has been trained
+#TODO
 
+#Launch test script
+os.system('python findFace.py test_faces')

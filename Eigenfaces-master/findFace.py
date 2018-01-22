@@ -89,7 +89,7 @@ class FindFace(object):                                                       # 
                         f.write('image: %s\nresult: wrong, got %2d (face_id = %2d)\n\n' %
                                 (path_to_img, result_id, face_id))
 
-        print ('> Evaluating AT&T faces ended')
+        print ('> Evaluating faces from database ended')
         self.accuracy = float(100. * test_correct / test_count)
         print ('Correct: ' + str(self.accuracy) + '%')
         f.write('Correct: %.2f\n' % (self.accuracy))
@@ -102,7 +102,7 @@ class FindFace(object):                                                       # 
     located in the celebrity_dir folder.
     """
     def evaluate_celebrities(self, celebrity_dir='.'):
-        print ('> Evaluating celebrity matches started')
+        print ('> Evaluating test matches started')
         for img_name in os.listdir(celebrity_dir):                              # go through all the celebrity images in the folder
             path_to_img = os.path.join(celebrity_dir, img_name)
 
@@ -137,14 +137,19 @@ class FindFace(object):                                                       # 
 
                 f.write('id: %3d, score: %.6f\n' % (top_id, norms[top_id]))     # write the id and its score to the results file
 
+            print('Top match id : %3d\n' % (top5_ids[1]))
+            shutil.copyfile(path_to_img, os.path.join('.', 'previous_tests'))
             f.close()                                                           # close the results file
-        print ('> Evaluating celebrity matches ended')
+
+        #TODO Copy test face to previous_tests and delete
+
+        print ('> Evaluating matches ended')
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2 or len(sys.argv) > 3:
+    if len(sys.argv) < 2:
         print ('Usage: python2.7 eigenfaces.py ' \
-            + '<att faces dir> [<celebrity faces dir>]')
+            + '<test faces dir>')
         sys.exit(1)
 
     if not os.path.exists('results'):                                           # create a folder where to store the results
@@ -154,8 +159,9 @@ if __name__ == "__main__":
         os.makedirs('results')
 
     findFace = FindFace()
-    findFace.evaluate()                                                     # evaluate our model
+    findFace.evaluate_celebrities(str(sys.argv[1]))
 
-    if len(sys.argv) == 3:                                                      # if we have third argument (celebrity folder)
-        findFace.evaluate_celebrities(str(sys.argv[2]))                           # find best matches for the celebrities
+    if len(sys.argv) == 3:
+        findFace.evaluate()                                                     # evaluate our model
+
 
