@@ -120,15 +120,14 @@ class FindFace(object):                                                       # 
 
             # New result_dir
             now = datetime.datetime.now()
-            date = now.strftime("%Y-%m-%d_%Hh%Mm%Ss")
-            result_dir = '.\\previous_tests\\'+date
+            date = now.strftime("%Y-%m-%d_%Hh%Mm%Ss_")
+            result_dir = '.\\previous_tests\\'+date+img_name
             os.makedirs(result_dir)                                             #create result directory
         
             result_file = os.path.join(result_dir, 'results.txt')               # the file with the similarity value and id's
             
             f = open(result_file, 'w')                                          # open the results file for writing
             f.write('Test image : ' + img_name +'\n\n')
-
             
             index = 1
             for top_id in top5_ids:

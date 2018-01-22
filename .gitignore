@@ -97,7 +97,4 @@ ENV/
 
 # mypy
 .mypy_cache/
-Eigenfaces-master/database.pkl
-Eigenfaces-master/previous_tests/2018-01-22_20h52m29s/127.pgm
-*.pgm
-*.txt
+*.pkl
