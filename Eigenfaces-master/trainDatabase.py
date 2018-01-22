@@ -29,14 +29,11 @@ Algorithm Reference:
     http://docs.opencv.org/modules/contrib/doc/facerec/facerec_tutorial.html
 """
 class Eigenfaces(object):                                                       # *** COMMENTS ***
-    faces_count = 40
-
+    faces_count = 55
     faces_dir = '.'                                                             # directory path to the AT&T faces
 
-    train_faces_count = 9                                                       # number of faces used for training
-    test_faces_count = 1                                                        # number of faces used for testing
 
-    l = train_faces_count * faces_count                                         # training images count
+    total_img_number = 0
     m = 92                                                                      # number of columns of the image
     n = 112                                                                     # number of rows of the image
     mn = m * n                                                                  # length of the column vector
@@ -49,20 +46,22 @@ class Eigenfaces(object):                                                       
 
         self.faces_dir = _faces_dir
         self.energy = _energy
-        self.training_ids = []                                                  # train image id's for every at&t face
+        self.img_number_per_id = []                                                  # train image id's for every at&t face
 
-        L = np.empty(shape=(self.mn, self.l), dtype='float64')                  # each row of L represents one train image
+        total_img_number = 0
+        for face_id in range(1, self.faces_count + 1):
+            count = len([f for f in os.listdir(self.faces_dir +'\s'+str(face_id))])
+            self.total_img_number += count
+            self.img_number_per_id.append(count)
+
+        L = np.empty(shape=(self.mn, self.total_img_number), dtype='float64')                  # each row of L represents one train image
 
         cur_img = 0
         for face_id in range(1, self.faces_count + 1):
-
-            training_ids = random.sample(range(1, 11), self.train_faces_count)  # the id's of the 6 random training images
-            self.training_ids.append(training_ids)                              # remembering the training id's for later
-
-            for training_id in training_ids:
+            img_number = len([f for f in os.listdir(self.faces_dir +'\s'+str(face_id))])
+            for training_id in range(1,img_number):
                 path_to_img = os.path.join(self.faces_dir,
                         's' + str(face_id), str(training_id) + '.pgm')          # relative path
-                #print '> reading file: ' + path_to_img
 
                 img = cv2.imread(path_to_img, 0)                                # read a grayscale image
                 img_col = np.array(img, dtype='float64').flatten()              # flatten the 2d image into 1d
@@ -70,13 +69,13 @@ class Eigenfaces(object):                                                       
                 L[:, cur_img] = img_col[:]                                      # set the cur_img-th column to the current training image
                 cur_img += 1
 
-        self.mean_img_col = np.sum(L, axis=1) / self.l                          # get the mean of all images / over the rows of L
+        self.mean_img_col = np.sum(L, axis=1) / cur_img                          # get the mean of all images / over the rows of L
 
-        for j in range(0, self.l):                                             # subtract from all training images
+        for j in range(0, cur_img):                                             # subtract from all training images
             L[:, j] -= self.mean_img_col[:]
 
         C = np.matrix(L.transpose()) * np.matrix(L)                             # instead of computing the covariance matrix as
-        C /= self.l                                                             # L*L^T, we set C = L^T*L, and end up with way
+        C /= cur_img                                                            # L*L^T, we set C = L^T*L, and end up with way
                                                                                 # smaller and computentionally inexpensive one
                                                                                 # we also need to divide by the number of training
                                                                                 # images

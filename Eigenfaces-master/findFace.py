@@ -10,6 +10,7 @@ import shutil
 import random
 import numpy as np
 import pickle
+import datetime
 from trainDatabase import Eigenfaces
 
 """
@@ -38,9 +39,7 @@ class FindFace(object):                                                       # 
         self.mn = efaces.mn
         self.evectors = efaces.evectors
         self.W = efaces.W
-        self.test_faces_count = efaces.test_faces_count
-        self.train_faces_count = efaces.train_faces_count
-        self.training_ids = efaces.training_ids
+        self.img_number_per_id = efaces.img_number_per_id
         self.faces_dir = efaces.faces_dir
         self.faces_count = efaces.faces_count
     
@@ -75,19 +74,18 @@ class FindFace(object):                                                       # 
         test_correct = 0
         for face_id in range(1, self.faces_count + 1):
             for test_id in range(1, 11):
-                if (test_id in self.training_ids[face_id-1]) == False:          # we skip the image if it is part of the training set
-                    path_to_img = os.path.join(self.faces_dir,
-                            's' + str(face_id), str(test_id) + '.pgm')          # relative path
+                path_to_img = os.path.join(self.faces_dir,
+                        's' + str(face_id), str(test_id) + '.pgm')          # relative path
 
-                    result_id = self.classify(path_to_img)
-                    result = (int(result_id) == int(face_id))
+                result_id = self.classify(path_to_img)
+                result = (int(result_id) == int(face_id))
 
-                    if result == True:
-                        test_correct += 1
-                        f.write('image: %s\nresult: correct\n\n' % path_to_img)
-                    else:
-                        f.write('image: %s\nresult: wrong, got %2d (face_id = %2d)\n\n' %
-                                (path_to_img, result_id, face_id))
+                if result == True:
+                    test_correct += 1
+                    f.write('image: %s\nresult: correct\n\n' % path_to_img)
+                else:
+                    f.write('image: %s\nresult: wrong, got %2d (face_id = %2d)\n\n' %
+                            (path_to_img, result_id, face_id))
 
         print ('> Evaluating faces from database ended')
         self.accuracy = float(100. * test_correct / test_count)
@@ -116,34 +114,52 @@ class FindFace(object):                                                       # 
 
             diff = self.W - S                                                   # finding the min ||W_j - S||
             norms = np.linalg.norm(diff, axis=0)
-            top5_ids = np.argpartition(norms, 5)[:5]                           # first five elements: indices of top 5 matches in AT&T set
+            top5_ids = np.argpartition(norms, 5)[:5]                            # first five elements: indices of top 5 matches in AT&T set
 
             name_noext = os.path.splitext(img_name)[0]                          # the image file name without extension
-            result_dir = os.path.join('results', name_noext)                    # path to the respective results folder
-            os.makedirs(result_dir)                                             # make a results folder for the respective celebrity
+
+            # New result_dir
+            now = datetime.datetime.now()
+            date = now.strftime("%Y-%m-%d_%Hh%Mm%Ss")
+            result_dir = '.\\previous_tests\\'+date
+            os.makedirs(result_dir)                                             #create result directory
+        
             result_file = os.path.join(result_dir, 'results.txt')               # the file with the similarity value and id's
             
             f = open(result_file, 'w')                                          # open the results file for writing
             f.write('Test image : ' + img_name +'\n\n')
-            for top_id in top5_ids:
-                face_id = int(top_id / self.train_faces_count) + 1                 # getting the face_id of one of the closest matches
-                subface_id = self.training_ids[face_id-1][top_id % self.train_faces_count]           # getting the exact subimage from the face
 
-                path_to_img = os.path.join(self.faces_dir,
+            
+            index = 1
+            for top_id in top5_ids:
+                count = 0
+                for i in range(1, self.faces_count):
+                    count += self.img_number_per_id[i]
+                    if top_id <= count:
+                        face_id = i
+                        break
+                if index == 1:
+                    top_face_id = face_id
+                subface_id = count - top_id + 1           # getting the exact subimage from the face
+
+                path_to_found_img = os.path.join(self.faces_dir,
                         's' + str(face_id), str(subface_id) + '.pgm')           # relative path to the top5 face
 
-                shutil.copyfile(path_to_img,                                    # copy the top face from source
+                shutil.copyfile(path_to_found_img,                              # copy the top face from source
                         os.path.join(result_dir, str(top_id) + '.pgm'))         # to destination
 
-                f.write('id: %3d, score: %.6f\n' % (top_id, norms[top_id]))     # write the id and its score to the results file
-
-            print('Top match id : %3d\n' % (top5_ids[1]))
-            shutil.copyfile(path_to_img, os.path.join('.', 'previous_tests'))
+                f.write(str(index) + '.   Face_id: ' + str(face_id)+ ', id: %3d, score: %.6f\n' % (top_id, norms[top_id]))     # write the id and its score to the results file
+                index = index + 1
+            f.write('\n\nThis is probably face ' + str(top_face_id) +'\n')
             f.close()                                                           # close the results file
 
-        #TODO Copy test face to previous_tests and delete
+            shutil.copyfile(path_to_img,                                        # copy the tested face image
+                        os.path.join(result_dir, 'test_face.pgm'))
+
+        #TODO link face id to name (db)
 
         print ('> Evaluating matches ended')
+        print('> Face recognized : '+str(top_face_id))
 
 
 if __name__ == "__main__":
