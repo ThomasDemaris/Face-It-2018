@@ -11,6 +11,7 @@ import random
 import numpy as np
 import pickle
 import datetime
+import sqlite3
 from trainDatabase import Eigenfaces
 
 """
@@ -33,6 +34,11 @@ Algorithm Reference:
 class FindFace(object):                                                       # *** COMMENTS ***
 
     def __init__(self):
+        conn = sqlite3.connect('names.db')
+        c = conn.cursor()
+        #c.execute('SELECT Name FROM Names WHERE Id=41')
+        #user1 = c.fetchone()
+        #print(user1)
         with open('database.pkl', 'rb') as input:
             efaces = pickle.load(input)
         self.mean_img_col = efaces.mean_img_col
@@ -132,7 +138,7 @@ class FindFace(object):                                                       # 
             index = 1
             for top_id in top5_ids:
                 count = 0
-                for i in range(1, self.faces_count):
+                for i in range(1, self.faces_count + 1):
                     count += self.img_number_per_id[i]
                     if top_id <= count:
                         face_id = i
