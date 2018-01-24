@@ -14,31 +14,11 @@ import datetime
 import sqlite3
 from trainDatabase import Eigenfaces
 
-"""
-A Python class that implements the Eigenfaces algorithm
-for face recognition, using eigenvalue decomposition and
-principle component analysis.
 
-We use the AT&T data set, with 60% of the images as train
-and the rest 40% as a test set, including 85% of the energy.
-
-Additionally, we use a small set of celebrity images to
-find the best AT&T matches to them.
-
-Example Call:
-    $> python2.7 eigenfaces.py att_faces celebrity_faces
-
-Algorithm Reference:
-    http://docs.opencv.org/modules/contrib/doc/facerec/facerec_tutorial.html
-"""
-class FindFace(object):                                                       # *** COMMENTS ***
+class FindFace(object):   
 
     def __init__(self):
-        conn = sqlite3.connect('names.db')
-        c = conn.cursor()
-        #c.execute('SELECT Name FROM Names WHERE Id=41')
-        #user1 = c.fetchone()
-        #print(user1)
+       #Read eigenfaces database
         with open('database.pkl', 'rb') as input:
             efaces = pickle.load(input)
         self.mean_img_col = efaces.mean_img_col
@@ -100,14 +80,12 @@ class FindFace(object):                                                       # 
         f.close()                                                               # closing the file
 
     """
-    Evaluate the model for the small celebrity data set.
-    Returning the top 5 matches within the AT&T set.
-    Images should have the same size (92,112) and are
-    located in the celebrity_dir folder.
+    Evaluate test faces
     """
     def evaluate_celebrities(self, celebrity_dir='.'):
         print ('> Evaluating test matches started')
-        for img_name in os.listdir(celebrity_dir):                              # go through all the celebrity images in the folder
+        #For each test face
+        for img_name in os.listdir(celebrity_dir):                             
             path_to_img = os.path.join(celebrity_dir, img_name)
 
             img = cv2.imread(path_to_img, 0)                                    # read as a grayscale image
@@ -124,18 +102,19 @@ class FindFace(object):                                                       # 
 
             name_noext = os.path.splitext(img_name)[0]                          # the image file name without extension
 
-            # New result_dir
+            #Create corresponding result directory
             now = datetime.datetime.now()
             date = now.strftime("%Y-%m-%d_%Hh%Mm%Ss_")
-            result_dir = '.\\previous_tests\\'+date+img_name
-            os.makedirs(result_dir)                                             #create result directory
-        
-            result_file = os.path.join(result_dir, 'results.txt')               # the file with the similarity value and id's
+            result_dir = '.\\results\\'+date+img_name
+            os.makedirs(result_dir)                                        
+            #Create text file to store results
+            result_file = os.path.join(result_dir, 'results.txt')              
             
             f = open(result_file, 'w')                                          # open the results file for writing
             f.write('Test image : ' + img_name +'\n\n')
             
             index = 1
+            #For each top id, find the corresponding face id and subimage id
             for top_id in top5_ids:
                 count = 0
                 for i in range(1, self.faces_count + 1):
@@ -145,7 +124,7 @@ class FindFace(object):                                                       # 
                         break
                 if index == 1:
                     top_face_id = face_id
-                subface_id = count - top_id + 1           # getting the exact subimage from the face
+                subface_id = top_id - count + self.img_number_per_id[face_id]   # getting the exact subimage from the face
 
                 path_to_found_img = os.path.join(self.faces_dir,
                         's' + str(face_id), str(subface_id) + '.pgm')           # relative path to the top5 face
@@ -161,7 +140,13 @@ class FindFace(object):                                                       # 
             shutil.copyfile(path_to_img,                                        # copy the tested face image
                         os.path.join(result_dir, 'test_face.pgm'))
 
-        #TODO link face id to name (db)
+        #TODO
+        #Read name database
+        #conn = sqlite3.connect('names.db')
+        #c = conn.cursor()
+        #c.execute('SELECT Name FROM Names WHERE Id=41')
+        #user1 = c.fetchone()
+        #print(user1)
 
         print ('> Evaluating matches ended')
         print('> Face recognized : '+str(top_face_id))
