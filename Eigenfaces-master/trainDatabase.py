@@ -46,13 +46,14 @@ class Eigenfaces(object):                                                       
 
         self.faces_dir = _faces_dir
         self.energy = _energy
-        self.img_number_per_id = []                                                  # train image id's for every at&t face
+        self.img_number_per_id = [11]                                                  # train image id's for every at&t face
         self.faces_count = len([f for f in os.listdir(self.faces_dir)])
         total_img_number = 0
         for face_id in range(1, self.faces_count + 1):
             count = len([f for f in os.listdir(self.faces_dir +'\s'+str(face_id))])
             self.total_img_number += count
             self.img_number_per_id.append(count)
+            print(self.img_number_per_id[face_id])
 
         L = np.empty(shape=(self.mn, self.total_img_number), dtype='float64')                  # each row of L represents one train image
 

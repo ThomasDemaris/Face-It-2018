@@ -28,12 +28,14 @@ class FindFace(object):
         self.img_number_per_id = efaces.img_number_per_id
         self.faces_dir = efaces.faces_dir
         self.faces_count = efaces.faces_count
-    
+        self.count_closest = 1
+            
     """
     Classify an image to one of the eigenfaces.
     """
     def classify(self, path_to_img):
         img = cv2.imread(path_to_img, 0)                                        # read as a grayscale image
+        print(path_to_img)
         img_col = np.array(img, dtype='float64').flatten()                      # flatten the image
         img_col -= self.mean_img_col                                            # subract the mean column
         img_col = np.reshape(img_col, (self.mn, 1))                             # from row vector to col vector
@@ -43,35 +45,51 @@ class FindFace(object):
 
         diff = self.W - S                                                       # finding the min ||W_j - S||
         norms = np.linalg.norm(diff, axis=0)
+        
+        closest_face_id = np.argmin(norms) + self.count_closest                 # the id [0..240) of the minerror face to the sample
+        self.count_closest += 1                                      
+        print("Closest_id = " +str(closest_face_id))
+        
 
-        closest_face_id = np.argmin(norms)                                      # the id [0..240) of the minerror face to the sample
-        return (closest_face_id / self.train_faces_count) + 1                   # return the faceid (1..40)
+        count = 0
+        for i in range(1, self.faces_count + 1):
+            count += self.img_number_per_id[i]
+            if closest_face_id <= count:
+                face_id = i
+                break
+
+        
+        return face_id                  # return the faceid (1..40)
 
     """
     Evaluate the model using the 4 test faces left
     from every different face in the AT&T set.
     """
     def evaluate(self):
-        print ('> Evaluating AT&T faces started')
-        results_file = os.path.join('results', 'att_results.txt')               # filename for writing the evaluating results in
+        print ('> Evaluating the database')
+        results_file = os.path.join('results', 'evaluation_results.txt')               # filename for writing the evaluating results in
         f = open(results_file, 'w')                                             # the actual file
 
-        test_count = self.test_faces_count * self.faces_count                   # number of all AT&T test images/faces
+        test_count = 1 * self.faces_count                         # number of all AT&T test images/faces
         test_correct = 0
         for face_id in range(1, self.faces_count + 1):
-            for test_id in range(1, 11):
-                path_to_img = os.path.join(self.faces_dir,
-                        's' + str(face_id), str(test_id) + '.pgm')          # relative path
+            print("------")
+            print("IMG NUMBER = " + str(self.img_number_per_id[face_id]))
+            if self.img_number_per_id[face_id] > 1:
+                for test_id in range(1, 2):#self.img_number_per_id[face_id]+1):
+                    path_to_img = os.path.join(self.faces_dir,
+                            's' + str(face_id), str(test_id) + '.pgm')          # relative path
 
-                result_id = self.classify(path_to_img)
-                result = (int(result_id) == int(face_id))
+                    result_id = self.classify(path_to_img)
+                    result = (int(result_id) == int(face_id))
+                    print("Face Id : "+str(face_id) + " --- Found Id : "+str(result_id))
 
-                if result == True:
-                    test_correct += 1
-                    f.write('image: %s\nresult: correct\n\n' % path_to_img)
-                else:
-                    f.write('image: %s\nresult: wrong, got %2d (face_id = %2d)\n\n' %
-                            (path_to_img, result_id, face_id))
+                    if result == True:
+                        test_correct += 1
+                        f.write('image: %s\nresult: correct\n\n' % path_to_img)
+                    else:
+                        f.write('image: %s\nresult: wrong, got %2d (face_id = %2d)\n\n' %
+                                (path_to_img, result_id, face_id))
 
         print ('> Evaluating faces from database ended')
         self.accuracy = float(100. * test_correct / test_count)
@@ -139,6 +157,8 @@ class FindFace(object):
 
             shutil.copyfile(path_to_img,                                        # copy the tested face image
                         os.path.join(result_dir, 'test_face.pgm'))
+            print('> Tested image : '+str(img_name))
+            print('> Face recognized : '+str(top_face_id)+'\n')
 
         #TODO
         #Read name database
@@ -149,7 +169,7 @@ class FindFace(object):
         #print(user1)
 
         print ('> Evaluating matches ended')
-        print('> Face recognized : '+str(top_face_id))
+        
 
 
 if __name__ == "__main__":
@@ -165,9 +185,11 @@ if __name__ == "__main__":
         os.makedirs('results')
 
     findFace = FindFace()
-    findFace.evaluate_celebrities(str(sys.argv[1]))
-
-    if len(sys.argv) == 3:
+    if len(sys.argv) == 3 :
         findFace.evaluate()                                                     # evaluate our model
+    else:
+        findFace.evaluate_celebrities(str(sys.argv[1]))
+
+   
 
 
